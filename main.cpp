@@ -124,9 +124,8 @@ int main(int argc, char* argv[]) {
   }
 
   std::sort(coords.begin(), coords.end(), Coordinate::sortById);
-  outFile << "Index,CellId" << std::endl;
   for (const auto& coord : coords) {
-    outFile << coord.index << "," << coord.cellId << std::endl;
+    outFile << coord.cellId << std::endl;
   }
 
   if (outFile.fail()) {

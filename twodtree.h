@@ -24,7 +24,7 @@ void applyHalf(std::vector<Coordinate> &coords, size_t left, size_t right,
   size_t mid = left + (right - left) / 2;
 
   for (size_t i = left; i < mid; ++i) {
-    coords[i].cellId |= (1 << level);
+    coords[i].cellId |= (1 << (numberOfLevels - level - 1));
   }
   applyHalf(coords, left, mid, level + 1, numberOfLevels);
   applyHalf(coords, mid, right, level + 1, numberOfLevels);

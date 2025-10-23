@@ -74,7 +74,7 @@ void applyTwoMeans(std::vector<Coordinate> &coords, size_t left, size_t right,
   size_t mid = twoMeansSplit(coords, left, right);
 
   for (size_t i = left; i < mid; ++i)
-    coords[i].cellId |= (1 << level);
+    coords[i].cellId |= (1 << (numberOfLevels - level - 1));
 
   applyTwoMeans(coords, left, mid, level + 1, numberOfLevels);
   applyTwoMeans(coords, mid, right, level + 1, numberOfLevels);

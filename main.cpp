@@ -7,63 +7,12 @@
 #include <iostream>
 #include <vector>
 
+#include "coordinate.h"
 #include "csv.h"
+#include "twodtree.h"
+#include "twomeans.h"
 
-struct Coordinate {
-  Coordinate(size_t index, double latitude, double longitude)
-      : index(index), lat(latitude), lon(longitude), cellId(0) {}
-
-  size_t index;
-  double lat;
-  double lon;
-  int cellId;
-
-  static bool sortByLat(const Coordinate& left, const Coordinate& right) {
-    return left.lat < right.lat;
-  }
-
-  static bool sortByLon(const Coordinate& left, const Coordinate& right) {
-    return left.lon < right.lon;
-  }
-
-  static bool sortById(const Coordinate& left, const Coordinate& right) {
-    return left.index < right.index;
-  }
-};
-
-void applyHalf(std::vector<Coordinate>& coords, size_t left, size_t right,
-               int level, int numberOfLevels) {
-  assert(left <= right);
-  assert(right <= coords.size());
-
-  if (level >= numberOfLevels || left == right) {
-    return;
-  }
-
-  if (level % 2 == 0) {
-    std::sort(coords.begin() + left, coords.begin() + right,
-              Coordinate::sortByLat);
-  } else {
-    std::sort(coords.begin() + left, coords.begin() + right,
-              Coordinate::sortByLon);
-  }
-
-  size_t mid = left + (right - left) / 2;
-
-  for (size_t i = left; i < mid; ++i) {
-    coords[i].cellId |= (1 << level);
-  }
-  applyHalf(coords, left, mid, level + 1, numberOfLevels);
-  applyHalf(coords, mid, right, level + 1, numberOfLevels);
-}
-
-void partition(std::vector<Coordinate>& coords, int numberOfLevels) {
-  assert(numberOfLevels > 0);
-  std::sort(coords.begin(), coords.end(), Coordinate::sortByLat);
-  applyHalf(coords, 0, coords.size(), 0, numberOfLevels);
-}
-
-void logDuration(const std::string& message,
+void logDuration(const std::string &message,
                  std::chrono::high_resolution_clock::time_point start) {
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double, std::milli> duration = end - start;
@@ -71,7 +20,7 @@ void logDuration(const std::string& message,
             << std::endl;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   using namespace std::chrono;
 
   if (argc != 4) {
@@ -86,6 +35,7 @@ int main(int argc, char* argv[]) {
   std::string outputFile = argv[3];
 
   std::vector<Coordinate> coords;
+  coords.reserve(1 << 13);
 
   std::cout << "[LOG] Reading data from " << stopsFile << " ..." << std::endl;
   auto startReading = high_resolution_clock::now();
@@ -109,7 +59,11 @@ int main(int argc, char* argv[]) {
   std::cout << "[LOG] Partitioning data ..." << std::endl;
   auto startPartition = high_resolution_clock::now();
 
-  partition(coords, numberOfLevels);
+#ifdef KDTREE
+  twodtree::partition(coords, numberOfLevels);
+#else
+  twomeans::partition(coords, numberOfLevels);
+#endif
 
   logDuration("Partitioning data", startPartition);
 
@@ -124,7 +78,7 @@ int main(int argc, char* argv[]) {
   }
 
   std::sort(coords.begin(), coords.end(), Coordinate::sortById);
-  for (const auto& coord : coords) {
+  for (const auto &coord : coords) {
     outFile << coord.cellId << std::endl;
   }
 
